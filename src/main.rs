@@ -1,6 +1,29 @@
-use std::time::{SystemTime};
-use std::io;
+// MIT License
+//
+// Copyright (c) 2024 malloc-nbytes
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+
+use std::time::SystemTime;
 use std::io::Write;
+use std::io;
 
 struct Timer {
     start: SystemTime,
@@ -89,7 +112,19 @@ fn stop(timers: &mut Vec<Timer>, tl: &[&str]) {
     }
 }
 
+fn help() {
+    println!("Commands:");
+    println!("  help - displays this message");
+    println!("  exit - exit the REPL");
+    println!("  show <name1> <name2>...|* - show timer(s) `name` or all with `*`");
+    println!("  stop <name1> <name2>...|* - stop timer(s) `name` or all with `*`");
+    println!("  new <name1> <name2>...|* - create timer(s) `name` or all with `*`");
+}
+
 fn main() {
+    println!("--- Timer REPL ---");
+    println!("Type `help` for more information");
+
     let mut timers: Vec<Timer> = Vec::new();
     let mut inp = String::new();
 
@@ -104,6 +139,7 @@ fn main() {
         let parts: Vec<&str> = inp.trim().split(" ").collect();
 
         match &parts[..] {
+            ["help", ..] => help(),
             ["exit", ..] => break,
             ["show", tl @ ..] => show(&timers, &*tl),
             ["stop", tl @ ..] => stop(&mut timers, &*tl),

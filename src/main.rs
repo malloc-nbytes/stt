@@ -6,6 +6,7 @@ struct Timer {
     start: SystemTime,
     stop: Option<SystemTime>,
     name: String,
+    running: bool,
 }
 
 impl Timer {
@@ -13,37 +14,29 @@ impl Timer {
         Self {
             start: SystemTime::now(),
             stop: None,
-            name
+            name,
+            running: true,
         }
     }
 }
 
-fn add_timer(timers: &mut Vec<Timer>, name: String) {
-    if timers.iter().any(|t| t.name == name) {
-        println!("[ERR]: Timer: {} already exists.", name);
-    } else {
-        timers.push(Timer::new(name));
-    }
+fn show_timer(timer: &Timer, name: String) {
+    let duration = match timer.stop {
+        Some(stop) => stop.duration_since(timer.start).unwrap(),
+        None => timer.start.elapsed().unwrap(),
+    };
+    let hours = duration.as_secs() / 3600;
+    let minutes = (duration.as_secs() % 3600) / 60;
+    let seconds = duration.as_secs() % 60;
+    let milliseconds = duration.subsec_millis();
+    println!("({}) {}: {:02}:{:02}:{:02}.{:03}", (if timer.running { "RUNNING" } else { "STOPPED" }),
+             name, hours, minutes, seconds, milliseconds);
 }
 
-fn stop_timer(timers: &mut Vec<Timer>, name: String) {
-    if let Some(timer) = timers.iter_mut().find(|t| t.name == name) {
-        timer.stop = Some(SystemTime::now());
-    } else {
-        println!("[ERR]: Timer {name} does not exist.");
-    }
-}
-
-fn show_timer(timers: &mut Vec<Timer>, name: String) {
-    if let Some(timer) = timers.iter().find(|t| t.name == name) {
-        if let Some(stop) = timer.stop {
-            println!("Timer {name} ran for {seconds} seconds.", seconds = stop.duration_since(timer.start).unwrap().as_secs());
-        } else {
-            println!("Timer {name} is still running.");
-        }
-    } else {
-        println!("[ERR]: Timer {name} does not exist.");
-    }
+fn stop_timer(timer: &mut Timer, name: String) {
+    timer.stop = Some(SystemTime::now());
+    timer.running = false;
+    show_timer(timer, name);
 }
 
 fn main() {
@@ -62,9 +55,55 @@ fn main() {
 
         match &parts[..] {
             ["exit", ..] => break,
-            ["show", tl @ ..] => todo!(),
-            ["stop", tl @ ..] => todo!(),
-            ["new", tl @ ..] => todo!(),
+            ["show", tl @ ..] => {
+                if tl.len() == 0 {
+                    for timer in &timers {
+                        show_timer(timer, timer.name.clone());
+                    }
+                    continue;
+                }
+                if tl[0] == "*" {
+                    for timer in &timers {
+                        show_timer(timer, timer.name.clone());
+                    }
+                    continue;
+                }
+                for name in tl {
+                    let timer = timers.iter().find(|t| t.name == *name);
+                    match timer {
+                        Some(t) => show_timer(t, t.name.clone()),
+                        None => println!("Timer {} not found", name),
+                    }
+                }
+            },
+            ["stop", tl @ ..] => {
+                if tl.len() == 0 {
+                    println!("No name given");
+                    continue;
+                }
+                if tl[0] == "*" {
+                    for timer in &mut timers {
+                        stop_timer(timer, timer.name.clone());
+                    }
+                    continue;
+                }
+                for name in tl {
+                    let timer = timers.iter_mut().find(|t| t.name == *name);
+                    match timer {
+                        Some(t) => stop_timer(t, t.name.clone()),
+                        None => println!("Timer {} not found", name),
+                    }
+                }
+            },
+            ["new", tl @ ..] => {
+                if tl.len() == 0 {
+                    println!("No name given");
+                    continue;
+                }
+                for name in tl {
+                    timers.push(Timer::new(name.to_string()));
+                }
+            },
             [""] => (),
             [m] => println!("Unknown command: {m}"),
             _ => panic!(),

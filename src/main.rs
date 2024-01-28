@@ -25,6 +25,13 @@ use std::time::SystemTime;
 use std::io::Write;
 use std::io;
 
+use crossterm::{
+    execute,
+    style::{Print, ResetColor, SetForegroundColor, Color},
+    terminal::{Clear, ClearType},
+    cursor::{MoveTo},
+};
+
 struct Timer {
     start: SystemTime,
     stop: Option<SystemTime>,
@@ -37,15 +44,33 @@ fn show_timer(timer: &Timer, name: String) {
         Some(stop) => stop.duration_since(timer.start).unwrap(),
         None => timer.start.elapsed().unwrap(),
     };
+
     let (h, m, s, ms) = (
-        duration.as_secs()/3600,
-        (duration.as_secs()%3600)/60,
-        duration.as_secs()%60,
+        duration.as_secs() / 3600,
+        (duration.as_secs() % 3600) / 60,
+        duration.as_secs() % 60,
         duration.subsec_millis(),
     );
-    println!("({}) {}: {:02}:{:02}:{:02}.{:03}",
-             (if timer.running { "RUNNING" } else { "STOPPED" }),
-             name, h, m, s, ms);
+
+    let status_color = if timer.running {Color::Green} else {Color::Red};
+
+    execute!(
+        std::io::stdout(),
+        SetForegroundColor(status_color),
+        Print(format!(
+            "({}) {}: {:02}:{:02}:{:02}.{:03}",
+            if timer.running { "RUNNING" } else { "STOPPED" },
+            name,
+            h,
+            m,
+            s,
+            ms
+        )),
+        ResetColor
+    )
+    .expect("Failed to set colors");
+
+    println!();
 }
 
 fn stop_timer(timer: &mut Timer, name: String) {
@@ -86,12 +111,16 @@ fn create(timers: &mut Vec<Timer>, tl: &[&str]) {
         return;
     }
     for name in tl {
-        timers.push(Timer {
-            start: SystemTime::now(),
-            stop: None,
-            name: name.to_string(),
-            running: true,
-        });
+        if timers.iter().any(|t| t.name == *name.to_string()) {
+            println!("timer {name} is already created");
+        } else {
+            timers.push(Timer {
+                start: SystemTime::now(),
+                stop: None,
+                name: name.to_string(),
+                running: true,
+            });
+        }
     }
 }
 
@@ -115,13 +144,24 @@ fn stop(timers: &mut Vec<Timer>, tl: &[&str]) {
     }
 }
 
+fn clear() {
+    execute!(
+        io::stdout(),
+        Clear(ClearType::All),
+        MoveTo(0, 0),
+        Print("\n"),
+        ResetColor
+    ).expect("Failed to clear the terminal")
+}
+
 fn help() {
     println!("Commands:");
     println!("  help|h  - displays this message");
     println!("  exit|e  - exit the REPL");
-    println!("  show|ls - <name1> <name2>...|* - show timer(s) `name` or all with `*`");
-    println!("  stop|s  - <name1> <name2>...|* - stop timer(s) `name` or all with `*`");
+    println!("  show|sh - <name1> <name2>...|* - show timer(s) `name` or all with `*`");
+    println!("  stop|st - <name1> <name2>...|* - stop timer(s) `name` or all with `*`");
     println!("  new|n   - <name1> <name2>...|* - create timer(s) `name` or all with `*`");
+    println!("  clear|c - clear the terminal");
 }
 
 fn main() {
@@ -144,9 +184,10 @@ fn main() {
         match &parts[..] {
             ["help" | "h", ..] => help(),
             ["exit" | "e", ..] => break,
-            ["show" | "ls", tl @ ..] => show(&timers, &*tl),
-            ["stop" | "s", tl @ ..] => stop(&mut timers, &*tl),
+            ["show" | "sh", tl @ ..] => show(&timers, &*tl),
+            ["stop" | "st", tl @ ..] => stop(&mut timers, &*tl),
             ["new" | "n", tl @ ..] => create(&mut timers, &*tl),
+            ["clear" | "c", ..] => clear(),
             [""] => (),
             [m] => println!("Unknown command: {m}"),
             _ => panic!(),

@@ -18,16 +18,32 @@ impl Timer {
     }
 }
 
-fn add_timers(timers: &Timer, names: Vec<String>) {
-    unimplemented!()
+fn add_timer(timers: &mut Vec<Timer>, name: String) {
+    if timers.iter().any(|t| t.name == name) {
+        println!("[ERR]: Timer: {} already exists.", name);
+    } else {
+        timers.push(Timer::new(name));
+    }
 }
 
-fn stop_timers(timers: &Timer, names: Vec<String>) {
-    unimplemented!()
+fn stop_timer(timers: &mut Vec<Timer>, name: String) {
+    if let Some(timer) = timers.iter_mut().find(|t| t.name == name) {
+        timer.stop = Some(SystemTime::now());
+    } else {
+        println!("[ERR]: Timer {name} does not exist.");
+    }
 }
 
-fn list_timers(timers: &Timer, names: Vec<String>) {
-    unimplemented!()
+fn show_timer(timers: &mut Vec<Timer>, name: String) {
+    if let Some(timer) = timers.iter().find(|t| t.name == name) {
+        if let Some(stop) = timer.stop {
+            println!("Timer {name} ran for {seconds} seconds.", seconds = stop.duration_since(timer.start).unwrap().as_secs());
+        } else {
+            println!("Timer {name} is still running.");
+        }
+    } else {
+        println!("[ERR]: Timer {name} does not exist.");
+    }
 }
 
 fn main() {
@@ -46,7 +62,9 @@ fn main() {
 
         match &parts[..] {
             ["exit", ..] => break,
-            ["ls", tl @ ..] => todo!(),
+            ["show", tl @ ..] => todo!(),
+            ["stop", tl @ ..] => todo!(),
+            ["new", tl @ ..] => todo!(),
             [""] => (),
             [m] => println!("Unknown command: {m}"),
             _ => panic!(),

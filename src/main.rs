@@ -154,14 +154,34 @@ fn clear() {
     ).expect("Failed to clear the terminal")
 }
 
+fn remove(timers: &mut Vec<Timer>, tl: &[&str]) {
+    if tl.len() == 0 {
+        println!("No name given");
+        return;
+    }
+    if tl[0] == "*" {
+        timers.clear();
+        return;
+    }
+    for name in tl {
+        let timer = timers.iter().position(|t| t.name == *name);
+        if let Some(i) = timer {
+            timers.remove(i);
+        } else {
+            println!("Timer {} not found", name);
+        }
+    }
+}
+
 fn help() {
     println!("Commands:");
-    println!("  help|h  - displays this message");
-    println!("  exit|e  - exit the REPL");
-    println!("  show|sh - <name1> <name2>...|* - show timer(s) `name` or all with `*`");
-    println!("  stop|st - <name1> <name2>...|* - stop timer(s) `name` or all with `*`");
-    println!("  new|n   - <name1> <name2>...|* - create timer(s) `name` or all with `*`");
-    println!("  clear|c - clear the terminal");
+    println!("  help|h    - displays this message");
+    println!("  exit|e    - exit the REPL");
+    println!("  show|sh   - <name1> <name2>...|* - show timer(s) `name` or all with `*`");
+    println!("  stop|st   - <name1> <name2>...|* - stop timer(s) `name` or all with `*`");
+    println!("  new|n     - <name1> <name2>...|* - create timer(s) `name` or all with `*`");
+    println!("  remove|rm - remove a timer");
+    println!("  clear|c   - clear the terminal");
 }
 
 fn main() {
@@ -188,6 +208,7 @@ fn main() {
             ["stop" | "st", tl @ ..] => stop(&mut timers, &*tl),
             ["new" | "n", tl @ ..] => create(&mut timers, &*tl),
             ["clear" | "c", ..] => clear(),
+            ["remove" | "rm", tl @ ..] => remove(&mut timers, &*tl),
             [""] => (),
             [m] => println!("Unknown command: {m}"),
             _ => panic!(),

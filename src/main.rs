@@ -37,12 +37,15 @@ fn show_timer(timer: &Timer, name: String) {
         Some(stop) => stop.duration_since(timer.start).unwrap(),
         None => timer.start.elapsed().unwrap(),
     };
-    let hours = duration.as_secs() / 3600;
-    let minutes = (duration.as_secs() % 3600) / 60;
-    let seconds = duration.as_secs() % 60;
-    let milliseconds = duration.subsec_millis();
-    println!("({}) {}: {:02}:{:02}:{:02}.{:03}", (if timer.running { "RUNNING" } else { "STOPPED" }),
-             name, hours, minutes, seconds, milliseconds);
+    let (h, m, s, ms) = (
+        duration.as_secs()/3600,
+        (duration.as_secs()%3600)/60,
+        duration.as_secs()%60,
+        duration.subsec_millis(),
+    );
+    println!("({}) {}: {:02}:{:02}:{:02}.{:03}",
+             (if timer.running { "RUNNING" } else { "STOPPED" }),
+             name, h, m, s, ms);
 }
 
 fn stop_timer(timer: &mut Timer, name: String) {
@@ -114,11 +117,11 @@ fn stop(timers: &mut Vec<Timer>, tl: &[&str]) {
 
 fn help() {
     println!("Commands:");
-    println!("  help - displays this message");
-    println!("  exit - exit the REPL");
-    println!("  show <name1> <name2>...|* - show timer(s) `name` or all with `*`");
-    println!("  stop <name1> <name2>...|* - stop timer(s) `name` or all with `*`");
-    println!("  new <name1> <name2>...|* - create timer(s) `name` or all with `*`");
+    println!("  help|h  - displays this message");
+    println!("  exit|e  - exit the REPL");
+    println!("  show|ls - <name1> <name2>...|* - show timer(s) `name` or all with `*`");
+    println!("  stop|s  - <name1> <name2>...|* - stop timer(s) `name` or all with `*`");
+    println!("  new|n   - <name1> <name2>...|* - create timer(s) `name` or all with `*`");
 }
 
 fn main() {
@@ -139,11 +142,11 @@ fn main() {
         let parts: Vec<&str> = inp.trim().split(" ").collect();
 
         match &parts[..] {
-            ["help", ..] => help(),
-            ["exit", ..] => break,
-            ["show", tl @ ..] => show(&timers, &*tl),
-            ["stop", tl @ ..] => stop(&mut timers, &*tl),
-            ["new", tl @ ..] => create(&mut timers, &*tl),
+            ["help" | "h", ..] => help(),
+            ["exit" | "e", ..] => break,
+            ["show" | "ls", tl @ ..] => show(&timers, &*tl),
+            ["stop" | "s", tl @ ..] => stop(&mut timers, &*tl),
+            ["new" | "n", tl @ ..] => create(&mut timers, &*tl),
             [""] => (),
             [m] => println!("Unknown command: {m}"),
             _ => panic!(),

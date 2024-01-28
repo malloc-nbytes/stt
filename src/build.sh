@@ -2,4 +2,4 @@
 
 set -xe
 
-rustc main.rs
+rustc -o stt main.rs
